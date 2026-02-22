@@ -4,8 +4,11 @@ const BASE = process.env.API_URL ?? 'http://localhost:3001';
 
 export async function api<T>(path: string, init?: RequestInit): Promise<{ status: number; body: T }> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...((init?.headers as Record<string, string>) ?? {}),
+    },
   });
   if (!res.ok) {
     const err = await res.json();
@@ -17,8 +20,11 @@ export async function api<T>(path: string, init?: RequestInit): Promise<{ status
 
 export async function apiStatus(path: string, init?: RequestInit): Promise<number> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...((init?.headers as Record<string, string>) ?? {}),
+    },
   });
   return res.status;
 }
