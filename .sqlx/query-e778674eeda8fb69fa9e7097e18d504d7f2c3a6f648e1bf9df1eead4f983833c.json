@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE todos SET completed = ?1, updated_at = datetime('now')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "e778674eeda8fb69fa9e7097e18d504d7f2c3a6f648e1bf9df1eead4f983833c"
+}

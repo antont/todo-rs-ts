@@ -53,7 +53,7 @@ scripts/check-types.sh
 ## Architecture
 
 - **Library crate + binaries**: `src/lib.rs` exports modules (`error`, `handlers`, `models`). Binaries: `todo-api` (server, postgres), `todo-migrate` (migration runner, postgres), `handler` (Vercel function, sqlite).
-- **No ORM**: handlers use `sqlx::query_as` with raw SQL. Keep it that way.
+- **No ORM**: handlers use `sqlx::query_as!`/`sqlx::query!` macros with raw SQL for compile-time verified queries. Keep it that way.
 - **Separate DB and API types**: `TodoRow` (with `FromRow`) is the database row; `Todo` (with `Serialize + TS`) is the API response. Convert with `From<TodoRow>`. Don't merge them. `TodoRow` and `From<TodoRow>` are cfg-gated for postgres vs sqlite.
 - **Frontend state**: TanStack Query manages server state. Mutations invalidate the `['todos']` query key. No client-side state management library.
 
@@ -72,12 +72,14 @@ scripts/check-types.sh
 3. Add field to `Todo` (and update `From<TodoRow>`)
 4. Regenerate types: `scripts/generate-types.sh`
 5. Update frontend components to use the new field
+6. Re-run `cargo sqlx prepare` (see below)
 
 **Add a new endpoint:**
 1. Add handler function in `src/handlers.rs`
 2. Add route in `src/main.rs`
 3. Add fetch function in `web/src/api.ts`
 4. If new request/response types are needed, add to `src/models.rs` with `#[ts(export)]`, regenerate, and update `web/src/types/generated/index.ts`
+5. Re-run `cargo sqlx prepare` if the handler has SQL queries (see below)
 
 ## Testing
 
@@ -90,6 +92,31 @@ Integration tests are in `web/tests/`. They hit the real API over HTTP using the
 - `scripts/setup-db.sh` creates and migrates both dev and test databases
 
 **Add a new test:** add a `test()` block in `web/tests/todos.test.ts`. Use the helpers from `web/tests/helpers.ts` (`createTodo`, `listTodos`, `api`, `apiStatus`, `clearTodos`).
+
+## Compile-time SQL verification
+
+Handlers use `sqlx::query!` and `sqlx::query_as!` macros that verify SQL against the real database schema at compile time. This catches typos, type mismatches, and missing columns before runtime.
+
+The `.sqlx/` directory contains cached query metadata so builds work without a live database (`SQLX_OFFLINE=true`). **Re-run `cargo sqlx prepare` after any SQL change** (new queries, modified queries, or schema migrations).
+
+Two-step prepare workflow (both backends must be updated):
+
+```bash
+# 1. Postgres (needs running postgres with schema applied)
+DATABASE_URL=postgres://localhost/todo_app cargo sqlx prepare -- --features postgres,test-helpers
+
+# 2. SQLite (create temp DB, migrate, prepare, clean up)
+DATABASE_URL=sqlite:todo_app.db cargo sqlx database create
+DATABASE_URL=sqlite:todo_app.db cargo sqlx migrate run --source migrations/sqlite
+DATABASE_URL=sqlite:todo_app.db cargo sqlx prepare -- --no-default-features --features sqlite,test-helpers
+rm todo_app.db
+```
+
+Commit the updated `.sqlx/` directory after preparing.
+
+**SQLite type overrides:** The SQLite schema uses `INTEGER` for `completed` and `TEXT` columns may be inferred as nullable. Use `as "col!: Type"` syntax in SELECT/RETURNING clauses for SQLite queries:
+- `completed as "completed!: bool"` — forces non-null bool
+- `id as "id!"`, `title as "title!"` etc. — forces non-null string
 
 ## Gotchas
 

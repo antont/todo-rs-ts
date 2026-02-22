@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT\n            COALESCE(SUM(CASE WHEN NOT completed THEN 1 ELSE 0 END), 0) as \"active_count!: i64\",\n            COALESCE(SUM(CASE WHEN completed THEN 1 ELSE 0 END), 0) as \"completed_count!: i64\"\n         FROM todos",
+  "describe": {
+    "columns": [
+      {
+        "name": "active_count!: i64",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "completed_count!: i64",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "7a194ad1b2994a0651e7d2b63d86cf080b5e2a3203236ca5f523141b4ea6064c"
+}

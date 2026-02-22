@@ -20,19 +20,17 @@ pub async fn list_todos(
     #[cfg(feature = "postgres")]
     let rows: Vec<TodoRow> = match filter {
         "active" => {
-            sqlx::query_as("SELECT * FROM todos WHERE completed = false ORDER BY created_at DESC")
+            sqlx::query_as!(TodoRow, "SELECT * FROM todos WHERE completed = false ORDER BY created_at DESC")
                 .fetch_all(&pool)
                 .await?
         }
         "completed" => {
-            sqlx::query_as(
-                "SELECT * FROM todos WHERE completed = true ORDER BY created_at DESC",
-            )
-            .fetch_all(&pool)
-            .await?
+            sqlx::query_as!(TodoRow, "SELECT * FROM todos WHERE completed = true ORDER BY created_at DESC")
+                .fetch_all(&pool)
+                .await?
         }
         _ => {
-            sqlx::query_as("SELECT * FROM todos ORDER BY created_at DESC")
+            sqlx::query_as!(TodoRow, "SELECT * FROM todos ORDER BY created_at DESC")
                 .fetch_all(&pool)
                 .await?
         }
@@ -41,48 +39,61 @@ pub async fn list_todos(
     #[cfg(feature = "sqlite")]
     let rows: Vec<TodoRow> = match filter {
         "active" => {
-            sqlx::query_as("SELECT * FROM todos WHERE completed = 0 ORDER BY created_at DESC")
-                .fetch_all(&pool)
-                .await?
+            sqlx::query_as!(
+                TodoRow,
+                r#"SELECT id as "id!", title as "title!", completed as "completed!: bool",
+                   created_at as "created_at!", updated_at as "updated_at!"
+                   FROM todos WHERE completed = 0 ORDER BY created_at DESC"#
+            )
+            .fetch_all(&pool)
+            .await?
         }
         "completed" => {
-            sqlx::query_as(
-                "SELECT * FROM todos WHERE completed = 1 ORDER BY created_at DESC",
+            sqlx::query_as!(
+                TodoRow,
+                r#"SELECT id as "id!", title as "title!", completed as "completed!: bool",
+                   created_at as "created_at!", updated_at as "updated_at!"
+                   FROM todos WHERE completed = 1 ORDER BY created_at DESC"#
             )
             .fetch_all(&pool)
             .await?
         }
         _ => {
-            sqlx::query_as("SELECT * FROM todos ORDER BY created_at DESC")
-                .fetch_all(&pool)
-                .await?
+            sqlx::query_as!(
+                TodoRow,
+                r#"SELECT id as "id!", title as "title!", completed as "completed!: bool",
+                   created_at as "created_at!", updated_at as "updated_at!"
+                   FROM todos ORDER BY created_at DESC"#
+            )
+            .fetch_all(&pool)
+            .await?
         }
     };
 
     #[cfg(feature = "postgres")]
-    let counts: (i64, i64) = sqlx::query_as(
-        "SELECT \
-            COUNT(*) FILTER (WHERE NOT completed), \
-            COUNT(*) FILTER (WHERE completed) \
-         FROM todos",
+    let counts = sqlx::query!(
+        r#"SELECT
+            COUNT(*) FILTER (WHERE NOT completed) as "active_count!",
+            COUNT(*) FILTER (WHERE completed) as "completed_count!"
+         FROM todos"#
     )
     .fetch_one(&pool)
     .await?;
 
     #[cfg(feature = "sqlite")]
-    let counts: (i64, i64) = sqlx::query_as(
-        "SELECT \
-            COALESCE(SUM(CASE WHEN NOT completed THEN 1 ELSE 0 END), 0), \
-            COALESCE(SUM(CASE WHEN completed THEN 1 ELSE 0 END), 0) \
-         FROM todos",
+    let counts = sqlx::query!(
+        r#"SELECT
+            COALESCE(SUM(CASE WHEN NOT completed THEN 1 ELSE 0 END), 0) as "active_count!: i64",
+            COALESCE(SUM(CASE WHEN completed THEN 1 ELSE 0 END), 0) as "completed_count!: i64"
+         FROM todos"#
     )
     .fetch_one(&pool)
     .await?;
 
     Ok(Json(TodoListResponse {
         todos: rows.into_iter().map(Todo::from).collect(),
-        active_count: counts.0,
-        completed_count: counts.1,
+        active_count: counts.active_count,
+        completed_count: counts.completed_count,
     }))
 }
 
@@ -99,21 +110,28 @@ pub async fn create_todo(
     }
 
     #[cfg(feature = "postgres")]
-    let row: TodoRow = sqlx::query_as(
+    let row: TodoRow = sqlx::query_as!(
+        TodoRow,
         "INSERT INTO todos (title) VALUES ($1) RETURNING *",
+        title
     )
-    .bind(&title)
     .fetch_one(&pool)
     .await?;
 
     #[cfg(feature = "sqlite")]
-    let row: TodoRow = sqlx::query_as(
-        "INSERT INTO todos (id, title) VALUES (?1, ?2) RETURNING *",
-    )
-    .bind(Uuid::new_v4().to_string())
-    .bind(&title)
-    .fetch_one(&pool)
-    .await?;
+    let row: TodoRow = {
+        let id = Uuid::new_v4().to_string();
+        sqlx::query_as!(
+            TodoRow,
+            r#"INSERT INTO todos (id, title) VALUES (?1, ?2)
+               RETURNING id as "id!", title as "title!", completed as "completed!: bool",
+               created_at as "created_at!", updated_at as "updated_at!""#,
+            id,
+            title
+        )
+        .fetch_one(&pool)
+        .await?
+    };
 
     Ok(Json(Todo::from(row)))
 }
@@ -130,17 +148,18 @@ pub async fn update_todo(
         }
     }
 
-    let row: Option<TodoRow> = sqlx::query_as(
+    let row: Option<TodoRow> = sqlx::query_as!(
+        TodoRow,
         "UPDATE todos SET \
             title = COALESCE($1, title), \
             completed = COALESCE($2, completed), \
             updated_at = now() \
          WHERE id = $3 \
          RETURNING *",
+        req.title,
+        req.completed,
+        id
     )
-    .bind(&req.title)
-    .bind(req.completed)
-    .bind(id)
     .fetch_optional(&pool)
     .await?;
 
@@ -162,17 +181,19 @@ pub async fn update_todo(
         }
     }
 
-    let row: Option<TodoRow> = sqlx::query_as(
-        "UPDATE todos SET \
-            title = COALESCE(?1, title), \
-            completed = COALESCE(?2, completed), \
-            updated_at = datetime('now') \
-         WHERE id = ?3 \
-         RETURNING *",
+    let row: Option<TodoRow> = sqlx::query_as!(
+        TodoRow,
+        r#"UPDATE todos SET
+            title = COALESCE(?1, title),
+            completed = COALESCE(?2, completed),
+            updated_at = datetime('now')
+         WHERE id = ?3
+         RETURNING id as "id!", title as "title!", completed as "completed!: bool",
+         created_at as "created_at!", updated_at as "updated_at!""#,
+        req.title,
+        req.completed,
+        id
     )
-    .bind(&req.title)
-    .bind(req.completed)
-    .bind(&id)
     .fetch_optional(&pool)
     .await?;
 
@@ -187,8 +208,7 @@ pub async fn delete_todo(
     State(pool): State<DbPool>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<()>, AppError> {
-    let result = sqlx::query("DELETE FROM todos WHERE id = $1")
-        .bind(id)
+    let result = sqlx::query!("DELETE FROM todos WHERE id = $1", id)
         .execute(&pool)
         .await?;
 
@@ -204,8 +224,7 @@ pub async fn delete_todo(
     State(pool): State<DbPool>,
     Path(id): Path<String>,
 ) -> Result<Json<()>, AppError> {
-    let result = sqlx::query("DELETE FROM todos WHERE id = ?1")
-        .bind(&id)
+    let result = sqlx::query!("DELETE FROM todos WHERE id = ?1", id)
         .execute(&pool)
         .await?;
 
@@ -220,22 +239,31 @@ pub async fn toggle_all(
     State(pool): State<DbPool>,
 ) -> Result<Json<()>, AppError> {
     // If all are completed, set all to active; otherwise set all to completed
-    let (active_count,): (i64,) =
-        sqlx::query_as("SELECT COUNT(*) FROM todos WHERE NOT completed")
+    #[cfg(feature = "postgres")]
+    let active_count = {
+        let rec = sqlx::query!(r#"SELECT COUNT(*) as "cnt!" FROM todos WHERE NOT completed"#)
             .fetch_one(&pool)
             .await?;
+        rec.cnt
+    };
+
+    #[cfg(feature = "sqlite")]
+    let active_count = {
+        let rec = sqlx::query!(r#"SELECT COUNT(*) as "cnt!: i64" FROM todos WHERE NOT completed"#)
+            .fetch_one(&pool)
+            .await?;
+        rec.cnt
+    };
 
     let new_completed = active_count > 0;
 
     #[cfg(feature = "postgres")]
-    sqlx::query("UPDATE todos SET completed = $1, updated_at = now()")
-        .bind(new_completed)
+    sqlx::query!("UPDATE todos SET completed = $1, updated_at = now()", new_completed)
         .execute(&pool)
         .await?;
 
     #[cfg(feature = "sqlite")]
-    sqlx::query("UPDATE todos SET completed = ?1, updated_at = datetime('now')")
-        .bind(new_completed)
+    sqlx::query!("UPDATE todos SET completed = ?1, updated_at = datetime('now')", new_completed)
         .execute(&pool)
         .await?;
 
@@ -246,12 +274,12 @@ pub async fn clear_completed(
     State(pool): State<DbPool>,
 ) -> Result<Json<()>, AppError> {
     #[cfg(feature = "postgres")]
-    sqlx::query("DELETE FROM todos WHERE completed = true")
+    sqlx::query!("DELETE FROM todos WHERE completed = true")
         .execute(&pool)
         .await?;
 
     #[cfg(feature = "sqlite")]
-    sqlx::query("DELETE FROM todos WHERE completed = 1")
+    sqlx::query!("DELETE FROM todos WHERE completed = 1")
         .execute(&pool)
         .await?;
 
@@ -262,7 +290,7 @@ pub async fn clear_completed(
 pub async fn delete_all(
     State(pool): State<DbPool>,
 ) -> Result<Json<()>, AppError> {
-    sqlx::query("DELETE FROM todos")
+    sqlx::query!("DELETE FROM todos")
         .execute(&pool)
         .await?;
 
