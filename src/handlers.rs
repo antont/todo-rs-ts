@@ -62,6 +62,9 @@ pub async fn create_todo(
     if title.is_empty() {
         return Err(AppError::BadRequest("title cannot be empty".into()));
     }
+    if title.len() > 500 {
+        return Err(AppError::BadRequest("title cannot exceed 500 characters".into()));
+    }
 
     let row: TodoRow = sqlx::query_as(
         "INSERT INTO todos (title) VALUES ($1) RETURNING *",
@@ -78,7 +81,13 @@ pub async fn update_todo(
     Path(id): Path<Uuid>,
     Json(req): Json<UpdateTodoRequest>,
 ) -> Result<Json<Todo>, AppError> {
-    let row: TodoRow = sqlx::query_as(
+    if let Some(ref title) = req.title {
+        if title.len() > 500 {
+            return Err(AppError::BadRequest("title cannot exceed 500 characters".into()));
+        }
+    }
+
+    let row: Option<TodoRow> = sqlx::query_as(
         "UPDATE todos SET \
             title = COALESCE($1, title), \
             completed = COALESCE($2, completed), \
@@ -89,10 +98,13 @@ pub async fn update_todo(
     .bind(&req.title)
     .bind(req.completed)
     .bind(id)
-    .fetch_one(&pool)
+    .fetch_optional(&pool)
     .await?;
 
-    Ok(Json(Todo::from(row)))
+    match row {
+        Some(row) => Ok(Json(Todo::from(row))),
+        None => Err(AppError::NotFound),
+    }
 }
 
 pub async fn delete_todo(

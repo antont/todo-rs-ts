@@ -39,10 +39,16 @@ cd web && npm test
 TypeScript types are generated from Rust structs via ts-rs. After changing any struct with `#[ts(export)]` in `src/models.rs`:
 
 ```bash
-TS_RS_EXPORT_DIR=web/src/types/generated cargo test
+scripts/generate-types.sh
 ```
 
 This writes individual `.ts` files to `web/src/types/generated/`. The barrel `index.ts` in that directory re-exports them — update it if you add or remove types.
+
+To verify types are up to date and the frontend compiles against them:
+
+```bash
+scripts/check-types.sh
+```
 
 ## Architecture
 
@@ -64,7 +70,7 @@ This writes individual `.ts` files to `web/src/types/generated/`. The barrel `in
 1. Add column in a new migration `migrations/0002_description.sql`
 2. Add field to `TodoRow` in `src/models.rs`
 3. Add field to `Todo` (and update `From<TodoRow>`)
-4. Regenerate types: `TS_RS_EXPORT_DIR=web/src/types/generated cargo test`
+4. Regenerate types: `scripts/generate-types.sh`
 5. Update frontend components to use the new field
 
 **Add a new endpoint:**
@@ -89,4 +95,4 @@ Integration tests are in `web/tests/`. They hit the real API over HTTP using the
 
 - ts-rs maps Rust `i64` to TypeScript `bigint` by default. Use `#[ts(type = "number")]` for JSON-serialized integer fields.
 - ts-rs maps `Option<T>` to `T | null`, not `T | undefined`. The frontend `api.ts` converts `undefined` → `null` when building request bodies.
-- The API CORS config only allows `http://localhost:5173`. Update `src/main.rs` if the frontend runs on a different origin.
+- The API CORS config reads the `CORS_ORIGIN` env var (defaults to `http://localhost:5173`). Set it in `.env` if the frontend runs on a different origin.

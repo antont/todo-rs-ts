@@ -30,9 +30,11 @@ async fn main() {
         .await
         .expect("Failed to connect to database");
 
+    let cors_origin = std::env::var("CORS_ORIGIN")
+        .unwrap_or_else(|_| "http://localhost:5173".to_string());
     let cors = CorsLayer::new()
         .allow_origin([
-            "http://localhost:5173".parse().unwrap(),
+            cors_origin.parse().unwrap(),
         ])
         .allow_methods(Any)
         .allow_headers(Any);
