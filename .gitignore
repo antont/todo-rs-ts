@@ -5,3 +5,5 @@ web/dist/
 bindings/
 .vercel
 .env*.local
+e2e/test-results/
+e2e/playwright-report/
