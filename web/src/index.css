@@ -35,7 +35,7 @@ body {
 
 .todoapp {
   background: var(--todoapp-bg);
-  margin: 130px 0 40px 0;
+  margin: 200px 0 40px 0;
   position: relative;
   box-shadow: var(--shadow);
 }
