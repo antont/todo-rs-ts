@@ -6,15 +6,6 @@ async function clearTodos() {
   await fetch(`${API_BASE}/api/test/cleanup`, { method: 'DELETE' });
 }
 
-async function createTodoViaAPI(title: string) {
-  const res = await fetch(`${API_BASE}/api/todos`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title }),
-  });
-  return res.json();
-}
-
 async function addTodo(page: Page, title: string) {
   const countBefore = await page.locator('.todo-list li').count();
   await page.locator('.new-todo').fill(title);
@@ -50,4 +41,4 @@ export const test = base.extend<{ clearState: void }>({
   }, { auto: true }],
 });
 
-export { expect, clearTodos, createTodoViaAPI, addTodo, todoItem, toggleItemByText, toggleAll };
+export { expect, clearTodos, addTodo, todoItem, toggleItemByText, toggleAll };

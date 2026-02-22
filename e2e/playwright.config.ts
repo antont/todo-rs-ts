@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './tests',
   outputDir: './test-results',
   workers: 1,
-  reporter: process.env.CI ? 'html' : 'list',
+  reporter: process.env.CI ? [['html', { outputFolder: './playwright-report' }]] : 'list',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
