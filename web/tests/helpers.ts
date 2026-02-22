@@ -20,7 +20,7 @@ export async function apiStatus(path: string, init?: RequestInit): Promise<numbe
 }
 
 export async function clearTodos(): Promise<void> {
-  await fetch(`${BASE}/api/todos`, { method: 'DELETE' });
+  await fetch(`${BASE}/api/test/cleanup`, { method: 'DELETE' });
 }
 
 export async function createTodo(title: string): Promise<Todo> {

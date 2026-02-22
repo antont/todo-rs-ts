@@ -13,7 +13,7 @@ source .env
 cargo run --bin todo-api
 
 # Rust — run migrations
-DATABASE_URL=postgres://postgres@localhost/todo_app cargo run --bin todo-migrate
+DATABASE_URL=postgres://localhost/todo_app cargo run --bin todo-migrate
 
 # Frontend — install deps (from web/)
 cd web && npm install
@@ -27,9 +27,9 @@ cd web && npx tsc --noEmit
 # Frontend — production build
 cd web && npx vite build
 
-# Integration tests (requires API running against test DB)
+# Integration tests (requires API running against test DB with test-helpers feature)
 # Terminal 1:
-DATABASE_URL=postgres://postgres@localhost/todo_app_test cargo run --bin todo-api
+DATABASE_URL=postgres://localhost/todo_app_test cargo run --features test-helpers --bin todo-api
 # Terminal 2:
 cd web && npm test
 ```
@@ -78,7 +78,8 @@ This writes individual `.ts` files to `web/src/types/generated/`. The barrel `in
 Integration tests are in `web/tests/`. They hit the real API over HTTP using the generated TypeScript types — proving the type bridge works end-to-end.
 
 - Tests assume the API is running on `localhost:3001` (override with `API_URL` env var)
-- Each test clears all data via `DELETE /api/todos` in `beforeEach`
+- The API must be started with `--features test-helpers` — this enables `DELETE /api/test/cleanup` used by `beforeEach` to clear data
+- Each test clears all data via `DELETE /api/test/cleanup` in `beforeEach`
 - Use a separate test database (`todo_app_test`) to avoid clobbering dev data
 - `scripts/setup-db.sh` creates and migrates both dev and test databases
 

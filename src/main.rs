@@ -38,11 +38,19 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
-        .route("/api/todos", get(handlers::list_todos).post(handlers::create_todo).delete(handlers::delete_all))
+        .route("/api/todos", get(handlers::list_todos).post(handlers::create_todo))
         .route("/api/todos/{id}", patch(handlers::update_todo))
         .route("/api/todos/{id}", delete(handlers::delete_todo))
         .route("/api/todos/toggle-all", post(handlers::toggle_all))
-        .route("/api/todos/completed", delete(handlers::clear_completed))
+        .route("/api/todos/completed", delete(handlers::clear_completed));
+
+    #[cfg(feature = "test-helpers")]
+    let app = {
+        tracing::info!("test-helpers feature enabled: DELETE /api/test/cleanup is available");
+        app.route("/api/test/cleanup", delete(handlers::delete_all))
+    };
+
+    let app = app
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(pool);

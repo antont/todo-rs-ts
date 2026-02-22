@@ -87,21 +87,21 @@ npm run dev
 | `DELETE` | `/api/todos/{id}` | Delete a todo |
 | `POST` | `/api/todos/toggle-all` | Toggle all todos |
 | `DELETE` | `/api/todos/completed` | Clear completed todos |
-| `DELETE` | `/api/todos` | Delete all todos |
+| `DELETE` | `/api/test/cleanup` | Delete all todos (`test-helpers` feature only) |
 
 ## Testing
 
 Integration tests live in `web/tests/` and hit the API over HTTP using the same generated types the frontend uses. They run with [Vitest](https://vitest.dev/).
 
 ```bash
-# Start the API against the test database (terminal 1)
-DATABASE_URL=postgres://postgres@localhost/todo_app_test cargo run --bin todo-api
+# Start the API against the test database with test-helpers enabled (terminal 1)
+DATABASE_URL=postgres://localhost/todo_app_test cargo run --features test-helpers --bin todo-api
 
 # Run tests (terminal 2)
 cd web && npm test
 ```
 
-Tests clear all data before each test case via `DELETE /api/todos`, so they're safe to run repeatedly.
+The `test-helpers` Cargo feature flag enables `DELETE /api/test/cleanup`, which tests use to clear data before each test case. This endpoint is not compiled into the binary without the feature flag.
 
 ## Design decisions
 

@@ -140,6 +140,7 @@ pub async fn clear_completed(
     Ok(Json(()))
 }
 
+#[cfg(feature = "test-helpers")]
 pub async fn delete_all(
     State(pool): State<PgPool>,
 ) -> Result<Json<()>, AppError> {
