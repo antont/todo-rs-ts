@@ -1,4 +1,4 @@
-import { test, expect, addTodo, toggleItem } from './fixtures';
+import { test, expect, addTodo, todoItem, toggleItemByText } from './fixtures';
 
 test.describe('Item Counter', () => {
   test('shows correct count after create', async ({ page }) => {
@@ -30,13 +30,13 @@ test.describe('Item Counter', () => {
     await expect(page.locator('.todo-count')).toContainText('3 items left');
 
     // Toggle one completed — active count drops
-    await toggleItem(page, 0);
+    await toggleItemByText(page, 'First');
     await expect(page.locator('.todo-count')).toContainText('2 items left');
 
-    // Delete one — active count drops again
-    const secondItem = page.locator('.todo-list li').nth(1);
-    await secondItem.hover();
-    await secondItem.locator('.destroy').click();
+    // Delete an active one — active count drops again
+    const target = todoItem(page, 'Second');
+    await target.hover();
+    await target.locator('.destroy').click();
     await expect(page.locator('.todo-count')).toContainText('1 item left');
   });
 });

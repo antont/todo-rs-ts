@@ -23,11 +23,16 @@ async function addTodo(page: Page, title: string) {
   await expect(page.locator('.todo-list li')).toHaveCount(countBefore + 1);
 }
 
+// Find a todo <li> by its label text.
+function todoItem(page: Page, title: string) {
+  return page.locator('.todo-list li').filter({ has: page.locator('label', { hasText: title }) });
+}
+
 // The TodoMVC toggle-all label (position:absolute, z-index:1) overlaps individual
 // toggle checkboxes. Coordinate-based clicks hit the label instead. Use el.click()
 // to dispatch directly on the DOM element, bypassing hit-testing.
-async function toggleItem(page: Page, index: number) {
-  await page.locator('.todo-list li').nth(index).locator('.toggle').evaluate(
+async function toggleItemByText(page: Page, title: string) {
+  await todoItem(page, title).locator('.toggle').evaluate(
     (el: HTMLElement) => el.click()
   );
 }
@@ -45,4 +50,4 @@ export const test = base.extend<{ clearState: void }>({
   }, { auto: true }],
 });
 
-export { expect, clearTodos, createTodoViaAPI, addTodo, toggleItem, toggleAll };
+export { expect, clearTodos, createTodoViaAPI, addTodo, todoItem, toggleItemByText, toggleAll };

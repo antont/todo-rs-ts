@@ -1,4 +1,4 @@
-import { test, expect, addTodo, toggleItem } from './fixtures';
+import { test, expect, addTodo, todoItem, toggleItemByText } from './fixtures';
 
 test.describe('Todo App — core CRUD & UI', () => {
   test('shows empty state', async ({ page }) => {
@@ -27,9 +27,9 @@ test.describe('Todo App — core CRUD & UI', () => {
 
     const items = page.locator('.todo-list li');
     await expect(items).toHaveCount(3);
-    await expect(items.nth(0).locator('label')).toHaveText('First');
-    await expect(items.nth(1).locator('label')).toHaveText('Second');
-    await expect(items.nth(2).locator('label')).toHaveText('Third');
+    await expect(todoItem(page, 'First')).toBeVisible();
+    await expect(todoItem(page, 'Second')).toBeVisible();
+    await expect(todoItem(page, 'Third')).toBeVisible();
     await expect(page.locator('.todo-count')).toContainText('3 items left');
   });
 
@@ -54,9 +54,9 @@ test.describe('Todo App — core CRUD & UI', () => {
     await page.goto('/');
     await addTodo(page, 'Toggle me');
 
-    await toggleItem(page, 0);
+    await toggleItemByText(page, 'Toggle me');
 
-    const item = page.locator('.todo-list li').first();
+    const item = todoItem(page, 'Toggle me');
     await expect(item).toHaveClass(/completed/);
     await expect(item.locator('.toggle')).toBeChecked();
   });
@@ -65,11 +65,11 @@ test.describe('Todo App — core CRUD & UI', () => {
     await page.goto('/');
     await addTodo(page, 'Toggle me');
 
-    await toggleItem(page, 0);
-    const item = page.locator('.todo-list li').first();
+    await toggleItemByText(page, 'Toggle me');
+    const item = todoItem(page, 'Toggle me');
     await expect(item).toHaveClass(/completed/);
 
-    await toggleItem(page, 0);
+    await toggleItemByText(page, 'Toggle me');
     await expect(item).not.toHaveClass(/completed/);
     await expect(item.locator('.toggle')).not.toBeChecked();
   });
@@ -79,12 +79,12 @@ test.describe('Todo App — core CRUD & UI', () => {
     await addTodo(page, 'Delete me');
     await addTodo(page, 'Keep me');
 
-    const firstItem = page.locator('.todo-list li').first();
-    await firstItem.hover();
-    await firstItem.locator('.destroy').click();
+    const target = todoItem(page, 'Delete me');
+    await target.hover();
+    await target.locator('.destroy').click();
 
     await expect(page.locator('.todo-list li')).toHaveCount(1);
-    await expect(page.locator('.todo-list li label').first()).toHaveText('Keep me');
+    await expect(todoItem(page, 'Keep me')).toBeVisible();
     await expect(page.locator('.todo-count')).toContainText('1 item left');
   });
 
@@ -92,7 +92,7 @@ test.describe('Todo App — core CRUD & UI', () => {
     await page.goto('/');
     await addTodo(page, 'Original');
 
-    const item = page.locator('.todo-list li').first();
+    const item = todoItem(page, 'Original');
     await item.locator('label').dblclick();
     const editInput = item.locator('.edit');
     await expect(editInput).toBeVisible();
@@ -100,7 +100,7 @@ test.describe('Todo App — core CRUD & UI', () => {
     await editInput.fill('Updated');
     await editInput.press('Enter');
 
-    await expect(item.locator('label')).toHaveText('Updated');
+    await expect(todoItem(page, 'Updated')).toBeVisible();
     await expect(editInput).not.toBeVisible();
   });
 
@@ -108,7 +108,7 @@ test.describe('Todo App — core CRUD & UI', () => {
     await page.goto('/');
     await addTodo(page, 'Original');
 
-    const item = page.locator('.todo-list li').first();
+    const item = todoItem(page, 'Original');
     await item.locator('label').dblclick();
     const editInput = item.locator('.edit');
 
@@ -123,21 +123,21 @@ test.describe('Todo App — core CRUD & UI', () => {
     await page.goto('/');
     await addTodo(page, 'Original');
 
-    const item = page.locator('.todo-list li').first();
+    const item = todoItem(page, 'Original');
     await item.locator('label').dblclick();
     const editInput = item.locator('.edit');
 
     await editInput.fill('Blurred');
     await page.locator('.new-todo').click();
 
-    await expect(item.locator('label')).toHaveText('Blurred');
+    await expect(todoItem(page, 'Blurred')).toBeVisible();
   });
 
   test('deletes todo if edit cleared', async ({ page }) => {
     await page.goto('/');
     await addTodo(page, 'To be deleted');
 
-    const item = page.locator('.todo-list li').first();
+    const item = todoItem(page, 'To be deleted');
     await item.locator('label').dblclick();
     const editInput = item.locator('.edit');
 

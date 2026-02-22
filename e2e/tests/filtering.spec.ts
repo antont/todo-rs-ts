@@ -1,12 +1,12 @@
-import { test, expect, addTodo, toggleItem } from './fixtures';
+import { test, expect, addTodo, todoItem, toggleItemByText } from './fixtures';
 
 test.describe('Filtering', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await addTodo(page, 'Active todo');
     await addTodo(page, 'Completed todo');
-    await toggleItem(page, 1);
-    await expect(page.locator('.todo-list li').nth(1)).toHaveClass(/completed/);
+    await toggleItemByText(page, 'Completed todo');
+    await expect(todoItem(page, 'Completed todo')).toHaveClass(/completed/);
   });
 
   test('filters active todos', async ({ page }) => {

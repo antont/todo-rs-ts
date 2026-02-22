@@ -2,7 +2,9 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  outputDir: './test-results',
   workers: 1,
+  reporter: process.env.CI ? 'html' : 'list',
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',

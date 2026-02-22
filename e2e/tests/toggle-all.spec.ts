@@ -1,4 +1,4 @@
-import { test, expect, addTodo, toggleItem, toggleAll } from './fixtures';
+import { test, expect, addTodo, toggleItemByText, toggleAll } from './fixtures';
 
 test.describe('Toggle All', () => {
   test('toggle-all marks all completed', async ({ page }) => {
@@ -10,7 +10,8 @@ test.describe('Toggle All', () => {
     await toggleAll(page);
 
     const items = page.locator('.todo-list li');
-    for (let i = 0; i < 3; i++) {
+    const count = await items.count();
+    for (let i = 0; i < count; i++) {
       await expect(items.nth(i)).toHaveClass(/completed/);
       await expect(items.nth(i).locator('.toggle')).toBeChecked();
     }
@@ -29,7 +30,8 @@ test.describe('Toggle All', () => {
     await toggleAll(page);
 
     const items = page.locator('.todo-list li');
-    for (let i = 0; i < 2; i++) {
+    const count = await items.count();
+    for (let i = 0; i < count; i++) {
       await expect(items.nth(i)).not.toHaveClass(/completed/);
       await expect(items.nth(i).locator('.toggle')).not.toBeChecked();
     }
@@ -40,8 +42,8 @@ test.describe('Toggle All', () => {
     await addTodo(page, 'One');
     await addTodo(page, 'Two');
 
-    // Complete only the first
-    await toggleItem(page, 0);
+    // Complete only one
+    await toggleItemByText(page, 'One');
 
     // toggle-all should be unchecked because some are still active
     await expect(page.locator('.toggle-all')).not.toBeChecked();
