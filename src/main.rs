@@ -35,6 +35,9 @@ async fn main() {
             std::env::var("DATABASE_URL").unwrap_or_else(|_| ":memory:".to_string());
         let pool = sqlx::sqlite::SqlitePoolOptions::new()
             .max_connections(1)
+            .min_connections(1)
+            .idle_timeout(None)
+            .max_lifetime(None)
             .connect(&database_url)
             .await
             .expect("Failed to connect to database");
