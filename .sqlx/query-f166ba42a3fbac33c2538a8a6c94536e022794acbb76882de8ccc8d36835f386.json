@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM todos WHERE completed = 1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "f166ba42a3fbac33c2538a8a6c94536e022794acbb76882de8ccc8d36835f386"
+}
