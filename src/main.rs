@@ -1,10 +1,7 @@
-mod error;
-mod handlers;
-mod models;
-
 use axum::routing::{delete, get, patch, post};
 use axum::Router;
 use sqlx::postgres::PgPoolOptions;
+use todo_rs_ts::handlers;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
