@@ -5,3 +5,4 @@ web/dist/
 bindings/
 .vercel
 .env*.local
+test-results/
