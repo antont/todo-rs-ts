@@ -10,6 +10,9 @@ pub type DbPool = sqlx::PgPool;
 #[cfg(feature = "sqlite")]
 pub type DbPool = sqlx::SqlitePool;
 
+#[cfg(feature = "sqlite")]
+type DbTimestamp = String;
+
 #[cfg(feature = "postgres")]
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct TodoRow {
@@ -80,14 +83,21 @@ impl From<TodoRow> for Todo {
 }
 
 #[cfg(feature = "sqlite")]
+fn timestamp_to_string(ts: DbTimestamp) -> String {
+    // SQLite datetime('now') returns "YYYY-MM-DD HH:MM:SS" in UTC.
+    // Normalize to RFC 3339 to match the postgres output format.
+    ts.replacen(' ', "T", 1) + "+00:00"
+}
+
+#[cfg(feature = "sqlite")]
 impl From<TodoRow> for Todo {
     fn from(row: TodoRow) -> Self {
         Self {
             id: row.id,
             title: row.title,
             completed: row.completed,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
+            created_at: timestamp_to_string(row.created_at),
+            updated_at: timestamp_to_string(row.updated_at),
         }
     }
 }
