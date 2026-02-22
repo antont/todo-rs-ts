@@ -290,6 +290,8 @@ pub async fn clear_completed(
 pub async fn delete_all(
     State(pool): State<DbPool>,
 ) -> Result<Json<()>, AppError> {
+    // No cfg-gating needed: SQL is identical for both backends (unlike queries
+    // that use FILTER/CASE, now()/datetime('now'), or $1/?1 placeholders).
     sqlx::query!("DELETE FROM todos")
         .execute(&pool)
         .await?;
