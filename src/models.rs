@@ -82,7 +82,9 @@ fn timestamp_to_string(ts: DbTimestamp) -> String {
 }
 #[cfg(feature = "sqlite")]
 fn timestamp_to_string(ts: DbTimestamp) -> String {
-    ts
+    // SQLite datetime('now') returns "YYYY-MM-DD HH:MM:SS" in UTC.
+    // Normalize to RFC 3339 to match the postgres output format.
+    ts.replacen(' ', "T", 1) + "+00:00"
 }
 
 impl From<TodoRow> for Todo {
