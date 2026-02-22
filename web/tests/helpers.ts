@@ -7,6 +7,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<{ status
     headers: { 'Content-Type': 'application/json' },
     ...init,
   });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || res.statusText);
+  }
   const body = await res.json() as T;
   return { status: res.status, body };
 }
