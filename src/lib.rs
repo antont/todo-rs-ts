@@ -4,3 +4,4 @@ compile_error!("features 'postgres' and 'sqlite' are mutually exclusive");
 pub mod error;
 pub mod handlers;
 pub mod models;
+pub mod queries;

@@ -107,7 +107,7 @@ The `test-helpers` Cargo feature flag enables `DELETE /api/test/cleanup`, which 
 
 **Separate DB and API types.** `TodoRow` uses `sqlx::FromRow` and maps 1:1 to the database schema (with native `Uuid` and `DateTime<Utc>`). `Todo` uses `Serialize + TS` and represents the JSON shape sent to the client (with `String` IDs and RFC 3339 timestamps). A `From<TodoRow>` impl bridges them. This separation means the database schema and API contract can evolve independently — adding a DB column doesn't force a frontend change until you're ready.
 
-**Direct SQL, no ORM.** Each handler contains its own `sqlx::query_as` call with plain SQL. This makes it obvious what each endpoint does without navigating abstraction layers. For a small schema this is clearer than a query builder, and the pattern scales fine with a few dozen tables.
+**Direct SQL, no ORM.** All SQL lives in `src/queries.rs` as compile-time verified `sqlx::query!` calls, with cfg-gated postgres and sqlite variants. Handlers in `src/handlers.rs` are cfg-free and only deal with HTTP/validation logic. The postgres and sqlite query functions are intentionally duplicated rather than abstracted with a macro — see [docs/query-layer-duplication-rationale.md](docs/query-layer-duplication-rationale.md) for the analysis and tradeoffs.
 
 **Generated types as the contract.** The TypeScript types come from the Rust structs, not the other way around. If a Rust struct field changes, the frontend won't compile until types are regenerated. This catches integration mismatches at build time rather than runtime.
 
