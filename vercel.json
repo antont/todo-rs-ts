@@ -1,6 +1,11 @@
 {
   "buildCommand": "cd web && npm install && npm run build",
   "outputDirectory": "web/dist",
+  "functions": {
+    "api/**/*.rs": {
+      "runtime": "vercel-rust@latest"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/handler" }
   ]
