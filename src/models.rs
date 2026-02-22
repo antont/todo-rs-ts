@@ -11,23 +11,24 @@ pub type DbPool = sqlx::PgPool;
 pub type DbPool = sqlx::SqlitePool;
 
 #[cfg(feature = "postgres")]
-#[derive(Debug, Clone, sqlx::FromRow)]
-pub struct TodoRow {
-    pub id: Uuid,
-    pub title: String,
-    pub completed: bool,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
+pub type DbId = Uuid;
 #[cfg(feature = "sqlite")]
+pub type DbId = String;
+
+#[cfg(feature = "postgres")]
+pub type DbTimestamp = DateTime<Utc>;
+#[cfg(feature = "sqlite")]
+pub type DbTimestamp = String;
+
+pub type TodoId = DbId;
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct TodoRow {
-    pub id: String,
+    pub id: DbId,
     pub title: String,
     pub completed: bool,
-    pub created_at: String,
-    pub updated_at: String,
+    pub created_at: DbTimestamp,
+    pub updated_at: DbTimestamp,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -67,27 +68,31 @@ pub struct UpdateTodoRequest {
 }
 
 #[cfg(feature = "postgres")]
-impl From<TodoRow> for Todo {
-    fn from(row: TodoRow) -> Self {
-        Self {
-            id: row.id.to_string(),
-            title: row.title,
-            completed: row.completed,
-            created_at: row.created_at.to_rfc3339(),
-            updated_at: row.updated_at.to_rfc3339(),
-        }
-    }
+fn id_to_string(id: DbId) -> String {
+    id.to_string()
+}
+#[cfg(feature = "sqlite")]
+fn id_to_string(id: DbId) -> String {
+    id
 }
 
+#[cfg(feature = "postgres")]
+fn timestamp_to_string(ts: DbTimestamp) -> String {
+    ts.to_rfc3339()
+}
 #[cfg(feature = "sqlite")]
+fn timestamp_to_string(ts: DbTimestamp) -> String {
+    ts
+}
+
 impl From<TodoRow> for Todo {
     fn from(row: TodoRow) -> Self {
         Self {
-            id: row.id,
+            id: id_to_string(row.id),
             title: row.title,
             completed: row.completed,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
+            created_at: timestamp_to_string(row.created_at),
+            updated_at: timestamp_to_string(row.updated_at),
         }
     }
 }
