@@ -109,6 +109,58 @@ describe('Todos API', () => {
     expect(data.activeCount).toBe(2);
   });
 
+  test('create rejects title over 500 characters', async () => {
+    const longTitle = 'a'.repeat(501);
+    const status = await apiStatus('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({ title: longTitle }),
+    });
+    expect(status).toBe(400);
+  });
+
+  test('create accepts title of exactly 500 characters', async () => {
+    const title = 'a'.repeat(500);
+    const todo = await createTodo(title);
+    expect(todo.title).toBe(title);
+  });
+
+  test('update rejects title over 500 characters', async () => {
+    const todo = await createTodo('Valid title');
+    const longTitle = 'a'.repeat(501);
+    const status = await apiStatus(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title: longTitle, completed: null }),
+    });
+    expect(status).toBe(400);
+  });
+
+  test('update non-existent todo returns 404', async () => {
+    const fakeId = '00000000-0000-0000-0000-000000000000';
+    const status = await apiStatus(`/api/todos/${fakeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title: 'Ghost', completed: null }),
+    });
+    expect(status).toBe(404);
+  });
+
+  test('concurrent toggle_all produces consistent state', async () => {
+    await createTodo('Task 1');
+    await createTodo('Task 2');
+    await createTodo('Task 3');
+
+    // Fire 3 concurrent toggle_all requests
+    await Promise.all([
+      apiStatus('/api/todos/toggle-all', { method: 'POST' }),
+      apiStatus('/api/todos/toggle-all', { method: 'POST' }),
+      apiStatus('/api/todos/toggle-all', { method: 'POST' }),
+    ]);
+
+    const data = await listTodos();
+    const states = data.todos.map((t) => t.completed);
+    // All todos should end in the same completed state
+    expect(states.every((s) => s === states[0])).toBe(true);
+  });
+
   test('clear completed', async () => {
     const todo1 = await createTodo('Keep this');
     await createTodo('Remove this');
