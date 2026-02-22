@@ -12,19 +12,21 @@ Demonstrates the pattern: define data types once in Rust, derive TypeScript inte
 | Database | PostgreSQL |
 | Type bridge | [ts-rs](https://github.com/Aleph-Alpha/ts-rs) — Rust structs → TypeScript interfaces |
 | Frontend | React 19, Vite, [TanStack Query](https://tanstack.com/query) |
-| Migrations | [Refinery](https://github.com/rust-db/refinery) |
+| Migrations | [SQLx](https://github.com/launchbadge/sqlx) built-in (`sqlx::migrate!`) |
 
 ## Project structure
 
 ```
 src/
   main.rs           # Axum server setup
+  lib.rs            # Shared library root
   models.rs         # TodoRow (FromRow) + Todo/Request/Response (Serialize + TS)
-  handlers.rs       # CRUD handlers with direct sqlx queries
+  handlers.rs       # CRUD handlers
+  queries.rs        # Direct sqlx queries (cfg-gated postgres/sqlite variants)
   error.rs          # AppError → IntoResponse
-  bin/migrate.rs    # Refinery migration runner
+  bin/migrate.rs    # SQLx migration runner (postgres)
 migrations/
-  V1__todos.sql
+  0001_todos.sql
 web/
   src/
     api.ts          # Fetch client using generated types
