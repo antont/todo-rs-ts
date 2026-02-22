@@ -10,7 +10,6 @@ path = "src/lib.rs"
 [[bin]]
 name = "todo-api"
 path = "src/main.rs"
-required-features = ["postgres"]
 
 [[bin]]
 name = "todo-migrate"

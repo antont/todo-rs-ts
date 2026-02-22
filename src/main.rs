@@ -1,6 +1,5 @@
 use axum::routing::{delete, get, patch, post};
 use axum::Router;
-use sqlx::postgres::PgPoolOptions;
 use todo_rs_ts::handlers;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -14,18 +13,37 @@ async fn main() {
         )
         .init();
 
-    let database_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(3001);
 
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await
-        .expect("Failed to connect to database");
+    #[cfg(feature = "postgres")]
+    let pool = {
+        let database_url =
+            std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        sqlx::postgres::PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&database_url)
+            .await
+            .expect("Failed to connect to database")
+    };
+
+    #[cfg(feature = "sqlite")]
+    let pool = {
+        let database_url =
+            std::env::var("DATABASE_URL").unwrap_or_else(|_| ":memory:".to_string());
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect(&database_url)
+            .await
+            .expect("Failed to connect to database");
+        sqlx::migrate!("./migrations/sqlite")
+            .run(&pool)
+            .await
+            .expect("Failed to run migrations");
+        pool
+    };
 
     let cors_origin = std::env::var("CORS_ORIGIN")
         .unwrap_or_else(|_| "http://localhost:5173".to_string());
