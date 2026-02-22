@@ -1,5 +1,7 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
+use axum::Json;
+use serde_json::json;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
@@ -30,6 +32,6 @@ impl IntoResponse for AppError {
             AppError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, self.to_string()),
         };
 
-        (status, message).into_response()
+        (status, Json(json!({"error": message}))).into_response()
     }
 }

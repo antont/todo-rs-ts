@@ -8,8 +8,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText);
+    const body = await res.json();
+    throw new Error(body.error || res.statusText);
   }
   return res.json();
 }
