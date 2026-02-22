@@ -19,10 +19,9 @@ required-features = ["postgres"]
 [[bin]]
 name = "handler"
 path = "api/handler.rs"
-required-features = ["vercel"]
 
 [features]
-default = ["postgres"]
+default = ["vercel"]
 postgres = ["sqlx/postgres", "sqlx/uuid", "sqlx/chrono"]
 sqlite = ["sqlx/sqlite"]
 vercel = ["dep:vercel_runtime", "dep:tower", "sqlite"]

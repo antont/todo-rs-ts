@@ -1,21 +1,9 @@
 {
-  "builds": [
-    {
-      "src": "web/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist",
-        "buildCommand": "npm install && npm run build"
-      }
-    },
-    {
-      "src": "api/handler.rs",
-      "use": "vercel-rust"
-    }
-  ],
+  "buildCommand": "cd web && npm install && npm run build",
+  "outputDirectory": "web/dist",
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/handler" },
     { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/web/$1" }
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
