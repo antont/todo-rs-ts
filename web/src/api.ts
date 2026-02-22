@@ -1,6 +1,6 @@
 import type { TodoListResponse, CreateTodoRequest } from './types/generated';
 
-const BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3001';
+const BASE = import.meta.env.VITE_API_BASE ?? '';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
