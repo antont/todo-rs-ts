@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 #[cfg(all(feature = "postgres", feature = "sqlite"))]
 compile_error!("features 'postgres' and 'sqlite' are mutually exclusive");
 
