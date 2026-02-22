@@ -4,8 +4,11 @@ const BASE = 'http://localhost:3001';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...((init?.headers as Record<string, string>) ?? {}),
+    },
   });
   if (!res.ok) {
     const body = await res.json();

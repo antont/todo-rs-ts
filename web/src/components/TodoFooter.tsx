@@ -26,10 +26,7 @@ export function TodoFooter({
             <a
               href={`#/${f}`}
               className={filter === f ? 'selected' : ''}
-              onClick={(e) => {
-                e.preventDefault()
-                onFilterChange(f)
-              }}
+              onClick={() => onFilterChange(f)}
             >
               {f[0].toUpperCase() + f.slice(1)}
             </a>

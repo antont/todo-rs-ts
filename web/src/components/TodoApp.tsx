@@ -1,15 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { todosApi } from '../api'
 import { TodoItem } from './TodoItem'
 import { TodoFooter } from './TodoFooter'
 
+function filterFromHash(): string {
+  const hash = window.location.hash.replace('#/', '')
+  return ['all', 'active', 'completed'].includes(hash) ? hash : 'all'
+}
+
 export function TodoApp() {
   const [newTitle, setNewTitle] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState(filterFromHash)
   const queryClient = useQueryClient()
 
-  const { data } = useQuery({
+  useEffect(() => {
+    const onHashChange = () => setFilter(filterFromHash())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['todos', filter],
     queryFn: () => todosApi.list(filter),
   })
@@ -51,9 +62,14 @@ export function TodoApp() {
     setNewTitle('')
   }
 
+  if (isLoading) return <p>Loading...</p>
+  if (isError) return <p>Error: {(error as Error).message}</p>
+
   const todos = data?.todos ?? []
   const activeCount = data?.activeCount ?? 0
   const completedCount = data?.completedCount ?? 0
+  // totalCount uses unfiltered counts (activeCount + completedCount) from the API,
+  // so it reflects the total regardless of the current filter.
   const totalCount = activeCount + completedCount
 
   return (
