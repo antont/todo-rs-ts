@@ -1,3 +1,5 @@
+#![deny(clippy::unwrap_used)]
+
 use axum::extract::{Path, Query, State};
 use axum::Json;
 use serde::Deserialize;

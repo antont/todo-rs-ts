@@ -52,7 +52,7 @@ async fn main() {
         .unwrap_or_else(|_| "http://localhost:5173".to_string());
     let cors = CorsLayer::new()
         .allow_origin([
-            cors_origin.parse().unwrap(),
+            cors_origin.parse().expect("CORS_ORIGIN must be a valid URI"),
         ])
         .allow_methods(Any)
         .allow_headers(Any);
