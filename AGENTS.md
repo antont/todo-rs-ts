@@ -55,13 +55,13 @@ This writes individual `.ts` files to `web/src/types/generated/`. The barrel `in
 
 - Rust structs for API responses use `#[serde(rename_all = "camelCase")]` — all JSON is camelCase.
 - API handlers return `Result<Json<T>, AppError>`. Add new error variants to `src/error.rs` as needed.
-- SQL migrations go in `migrations/` with refinery naming: `V{N}__{description}.sql`.
+- SQL migrations go in `migrations/` with sqlx naming: `{NNNN}_{description}.sql`.
 - Frontend components are in `web/src/components/`. One component per file, named export matching filename.
 
 ## Common tasks
 
 **Add a new field to todos:**
-1. Add column in a new migration `migrations/V2__description.sql`
+1. Add column in a new migration `migrations/0002_description.sql`
 2. Add field to `TodoRow` in `src/models.rs`
 3. Add field to `Todo` (and update `From<TodoRow>`)
 4. Regenerate types: `TS_RS_EXPORT_DIR=web/src/types/generated cargo test`
