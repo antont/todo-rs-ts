@@ -2,7 +2,7 @@
 
 Full-stack TodoMVC with a Rust API and a React frontend, connected by generated TypeScript types.
 
-Demonstrates the pattern: define data types once in Rust, derive TypeScript interfaces with [ts-rs](https://github.com/Aleph-Alpha/ts-rs), and use them in the frontend — no manual type synchronization.
+Demonstrates the pattern: define data types once in Rust, generate TypeScript interfaces with [typeshare](https://github.com/1Password/typeshare), and use them in the frontend — no manual type synchronization.
 
 ## Stack
 
@@ -10,7 +10,7 @@ Demonstrates the pattern: define data types once in Rust, derive TypeScript inte
 |-------|------|
 | API | [Axum](https://github.com/tokio-rs/axum) + [SQLx](https://github.com/launchbadge/sqlx) (direct queries, no ORM) |
 | Database | PostgreSQL |
-| Type bridge | [ts-rs](https://github.com/Aleph-Alpha/ts-rs) — Rust structs → TypeScript interfaces |
+| Type bridge | [typeshare](https://github.com/1Password/typeshare) — Rust structs → TypeScript interfaces |
 | Frontend | React 19, Vite, [TanStack Query](https://tanstack.com/query) |
 | Migrations | [SQLx](https://github.com/launchbadge/sqlx) built-in (`sqlx::migrate!`) |
 
@@ -20,7 +20,7 @@ Demonstrates the pattern: define data types once in Rust, derive TypeScript inte
 src/
   main.rs           # Axum server setup
   lib.rs            # Shared library root
-  models.rs         # TodoRow (FromRow) + Todo/Request/Response (Serialize + TS)
+  models.rs         # TodoRow (FromRow) + Todo/Request/Response (Serialize + typeshare)
   handlers.rs       # CRUD handlers
   queries.rs        # Direct sqlx queries (cfg-gated postgres/sqlite variants)
   error.rs          # AppError → IntoResponse
@@ -31,7 +31,7 @@ web/
   src/
     api.ts          # Fetch client using generated types
     components/     # TodoApp, TodoItem, TodoFooter
-    types/generated # ts-rs output (re-exported via index.ts)
+    types/generated # typeshare output (re-exported via index.ts)
 scripts/
   setup-db.sh       # Create database + run migrations
   generate-types.sh # Generate TypeScript from Rust structs
@@ -60,7 +60,7 @@ bash scripts/setup-db.sh
 bash scripts/generate-types.sh
 ```
 
-This runs `cargo test` with `TS_RS_EXPORT_DIR` set, which writes `.ts` files to `web/src/types/generated/`.
+This runs the `typeshare` CLI, which parses Rust source files and writes TypeScript interfaces to `web/src/types/generated/types.ts`.
 
 ### 3. Start the API
 
@@ -107,7 +107,7 @@ The `test-helpers` Cargo feature flag enables `DELETE /api/test/cleanup`, which 
 
 ## Design decisions
 
-**Separate DB and API types.** `TodoRow` uses `sqlx::FromRow` and maps 1:1 to the database schema (with native `Uuid` and `DateTime<Utc>`). `Todo` uses `Serialize + TS` and represents the JSON shape sent to the client (with `String` IDs and RFC 3339 timestamps). A `From<TodoRow>` impl bridges them. This separation means the database schema and API contract can evolve independently — adding a DB column doesn't force a frontend change until you're ready.
+**Separate DB and API types.** `TodoRow` uses `sqlx::FromRow` and maps 1:1 to the database schema (with native `Uuid` and `DateTime<Utc>`). `Todo` uses `Serialize` + `#[typeshare]` and represents the JSON shape sent to the client (with `String` IDs and RFC 3339 timestamps). A `From<TodoRow>` impl bridges them. This separation means the database schema and API contract can evolve independently — adding a DB column doesn't force a frontend change until you're ready.
 
 **Direct SQL, no ORM.** All SQL lives in `src/queries.rs` as compile-time verified `sqlx::query!` calls, with cfg-gated postgres and sqlite variants. Handlers in `src/handlers.rs` are cfg-free and only deal with HTTP/validation logic. The postgres and sqlite query functions are intentionally duplicated rather than abstracted with a macro — see [docs/query-layer-duplication-rationale.md](docs/query-layer-duplication-rationale.md) for the analysis and tradeoffs.
 
@@ -117,12 +117,12 @@ The `test-helpers` Cargo feature flag enables `DELETE /api/test/cleanup`, which 
 
 ## How the type bridge works
 
-Rust structs annotated with `#[derive(TS)]` and `#[ts(export)]` generate TypeScript interfaces when tests run:
+Rust structs annotated with `#[typeshare]` generate TypeScript interfaces via the [typeshare CLI](https://github.com/1Password/typeshare):
 
 ```rust
-#[derive(Serialize, TS)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
+#[typeshare]
 pub struct Todo {
     pub id: String,
     pub title: String,
@@ -132,16 +132,16 @@ pub struct Todo {
 }
 ```
 
-Produces:
+Running `typeshare ./src --lang=typescript --output-file=web/src/types/generated/types.ts` produces:
 
 ```typescript
-export type Todo = {
+export interface Todo {
   id: string;
   title: string;
   completed: boolean;
   createdAt: string;
   updatedAt: string;
-};
+}
 ```
 
 The frontend imports these types and uses them in the fetch client — if the Rust API shape changes, the TypeScript won't compile until the types are regenerated.

@@ -1,7 +1,7 @@
 #[cfg(feature = "postgres")]
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
+use typeshare::typeshare;
 #[cfg(feature = "postgres")]
 use uuid::Uuid;
 
@@ -31,9 +31,9 @@ pub struct TodoRow {
     pub updated_at: DbTimestamp,
 }
 
-#[derive(Debug, Clone, Serialize, TS)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
+#[typeshare]
 pub struct Todo {
     pub id: String,
     pub title: String,
@@ -42,26 +42,24 @@ pub struct Todo {
     pub updated_at: String,
 }
 
-#[derive(Debug, Clone, Serialize, TS)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
+#[typeshare]
 pub struct TodoListResponse {
     pub todos: Vec<Todo>,
-    #[ts(type = "number")]
-    pub active_count: i64,
-    #[ts(type = "number")]
-    pub completed_count: i64,
+    pub active_count: i32,
+    pub completed_count: i32,
 }
 
-#[derive(Debug, Deserialize, TS)]
-#[ts(export)]
+#[derive(Debug, Deserialize)]
+#[typeshare]
 pub struct CreateTodoRequest {
     pub title: String,
 }
 
-#[derive(Debug, Deserialize, TS)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-#[ts(export)]
+#[typeshare]
 pub struct UpdateTodoRequest {
     pub title: Option<String>,
     pub completed: Option<bool>,

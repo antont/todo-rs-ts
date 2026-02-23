@@ -24,8 +24,8 @@ pub async fn list_todos(
 
     Ok(Json(TodoListResponse {
         todos: rows.into_iter().map(Todo::from).collect(),
-        active_count,
-        completed_count,
+        active_count: active_count as i32,
+        completed_count: completed_count as i32,
     }))
 }
 
