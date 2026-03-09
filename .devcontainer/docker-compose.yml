@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ..:/workspaces/todo-rs-ts:cached
+      - ../../.bare:/workspaces/.bare:cached
     command: sleep infinity
     depends_on:
       db:
