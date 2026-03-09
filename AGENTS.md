@@ -36,13 +36,13 @@ cd web && npm test
 
 ## Type generation
 
-TypeScript types are generated from Rust structs via ts-rs. After changing any struct with `#[ts(export)]` in `src/models.rs`:
+TypeScript types are generated from Rust structs via [typeshare](https://github.com/1Password/typeshare). After changing any struct with `#[typeshare]` in `src/models.rs`:
 
 ```bash
 scripts/generate-types.sh
 ```
 
-This writes individual `.ts` files to `web/src/types/generated/`. The barrel `index.ts` in that directory re-exports them — update it if you add or remove types.
+This runs the `typeshare` CLI and writes a single `types.ts` file to `web/src/types/generated/`. The barrel `index.ts` in that directory re-exports them — update it if you add or remove types.
 
 To verify types are up to date and the frontend compiles against them:
 
@@ -54,7 +54,7 @@ scripts/check-types.sh
 
 - **Library crate + binaries**: `src/lib.rs` exports modules (`error`, `handlers`, `models`). Binaries: `todo-api` (server, postgres), `todo-migrate` (migration runner, postgres), `handler` (Vercel function, sqlite).
 - **No ORM**: handlers use `sqlx::query_as!`/`sqlx::query!` macros with raw SQL for compile-time verified queries. Keep it that way.
-- **Separate DB and API types**: `TodoRow` (with `FromRow`) is the database row; `Todo` (with `Serialize + TS`) is the API response. Convert with `From<TodoRow>`. Don't merge them. `TodoRow` and `From<TodoRow>` are cfg-gated for postgres vs sqlite.
+- **Separate DB and API types**: `TodoRow` (with `FromRow`) is the database row; `Todo` (with `Serialize` + `#[typeshare]`) is the API response. Convert with `From<TodoRow>`. Don't merge them. `TodoRow` and `From<TodoRow>` are cfg-gated for postgres vs sqlite.
 - **Frontend state**: TanStack Query manages server state. Mutations invalidate the `['todos']` query key. No client-side state management library.
 
 ## Conventions
@@ -78,7 +78,7 @@ scripts/check-types.sh
 1. Add handler function in `src/handlers.rs`
 2. Add route in `src/main.rs`
 3. Add fetch function in `web/src/api.ts`
-4. If new request/response types are needed, add to `src/models.rs` with `#[ts(export)]`, regenerate, and update `web/src/types/generated/index.ts`
+4. If new request/response types are needed, add to `src/models.rs` with `#[typeshare]`, regenerate, and update `web/src/types/generated/index.ts`
 5. Re-run `cargo sqlx prepare` if the handler has SQL queries (see below)
 
 ## Testing
@@ -120,8 +120,8 @@ Commit the updated `.sqlx/` directory after preparing.
 
 ## Gotchas
 
-- ts-rs maps Rust `i64` to TypeScript `bigint` by default. Use `#[ts(type = "number")]` for JSON-serialized integer fields.
-- ts-rs maps `Option<T>` to `T | null`, not `T | undefined`. The frontend `api.ts` converts `undefined` → `null` when building request bodies.
+- typeshare does not support `i64`/`u64` natively (JSON precision concerns). Use `i32` for count fields, or `#[typeshare(serialized_as = "String")]` for large integers.
+- typeshare maps `Option<T>` to optional fields (`field?: T`), not `T | null`. The frontend `api.ts` converts `undefined` → `null` when building request bodies.
 - The API CORS config reads the `CORS_ORIGIN` env var (defaults to `http://localhost:5173`). Set it in `.env` if the frontend runs on a different origin.
 
 ## Feature flags

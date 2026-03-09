@@ -1,26 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-GENERATED_DIR="web/src/types/generated"
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
+GENERATED="web/src/types/generated/types.ts"
+TMP_FILE=$(mktemp)
+trap 'rm -f "$TMP_FILE"' EXIT
 
-echo "Regenerating types into temp directory..."
-TS_RS_EXPORT_DIR="$TMP_DIR" cargo test export_bindings --quiet
+echo "Regenerating types into temp file..."
+typeshare ./src --lang=typescript --output-file="$TMP_FILE"
 
-echo "Comparing against $GENERATED_DIR..."
-# Only compare .ts files produced by ts-rs (exclude index.ts barrel)
-has_diff=0
-for f in "$TMP_DIR"/*.ts; do
-  name=$(basename "$f")
-  if ! diff -q "$f" "$GENERATED_DIR/$name" > /dev/null 2>&1; then
-    echo "MISMATCH: $name"
-    diff "$f" "$GENERATED_DIR/$name" || true
-    has_diff=1
-  fi
-done
-
-if [ "$has_diff" -ne 0 ]; then
+echo "Comparing against $GENERATED..."
+if ! diff -q "$TMP_FILE" "$GENERATED" > /dev/null 2>&1; then
+  echo "MISMATCH:"
+  diff "$TMP_FILE" "$GENERATED" || true
   echo "Types are out of date. Run scripts/generate-types.sh to update."
   exit 1
 fi
