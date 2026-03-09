@@ -1,0 +1,7 @@
+{
+  "name": "todo-rs-ts",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/todo-rs-ts",
+  "postCreateCommand": "bash scripts/setup-db.sh"
+}
